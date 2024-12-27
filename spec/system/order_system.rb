@@ -40,6 +40,8 @@ RSpec.describe '機屋画面での業務フロー', type: :system do
     select '作業完了', from: 'order_work_processes_attributes_0_work_process_status_id'
     click_button '更新'
     # 7. 詳細画面に移動
+    expect(page).to have_content '作業完了'
+    visit orders_path
     expect(page).to have_content '染色'
     expect(page).to have_content '作業前'
     # 8. Home画面のボタン操作を行う（'作業開始'）
