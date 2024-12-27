@@ -14,7 +14,8 @@ class Order < ApplicationRecord
   validates :roll_count, presence: true
   validates :quantity, presence: true
   validates :start_date, presence: true
-  # accepts_nested_attributes_for :machine_assignments
+
+  accepts_nested_attributes_for :work_processes
 
   # すべての作業工程が完了している注文を取得
   scope :completed, -> {
@@ -27,12 +28,6 @@ class Order < ApplicationRecord
     joins(:incomplete_work_processes).distinct
   }
 
-  accepts_nested_attributes_for :work_processes
-
-  # 最新の MachineAssignment を取得するメソッド
-  def latest_machine_assignment
-    machine_assignments.order(created_at: :desc).first
-  end
   # 検索のスコープ
   # 会社名
   scope :search_by_company, ->(company_id) {
@@ -53,6 +48,11 @@ class Order < ApplicationRecord
   scope :search_by_work_process_definitions, ->(work_process_definition_id) {
     joins(:work_processes).where(work_processes: { work_process_definition_id: work_process_definition_id }) if work_process_definition_id.present?
   }
+
+  # 最新の MachineAssignment を取得するメソッド
+  def latest_machine_assignment
+    machine_assignments.order(created_at: :desc).first
+  end
 
   # 注文が1週間以内に作成されたかを判定するメソッド
   def recent?

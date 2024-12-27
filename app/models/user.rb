@@ -8,5 +8,4 @@ class User < ApplicationRecord
   validates :phone_number, presence: true
   validates :company_id, presence: true
   validates :password, presence: true, length: { minimum: 6 }
-  # validates :password_confirmation, presence: true
 end

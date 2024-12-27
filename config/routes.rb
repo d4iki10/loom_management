@@ -32,7 +32,7 @@ Rails.application.routes.draw do
   end
 
   # 通常ユーザー用のリソース
-  resources :machines, only: [:index, :show, :new, :create, :edit, :update, :destroy]
+  resources :machines
   resources :orders do
     collection do
       get 'past_orders'
