@@ -9,6 +9,10 @@ class WorkProcess < ApplicationRecord
   # WorkControllerでの関連情報取得簡略化のため、throughを追加
   has_many :machines, through: :machine_assignments
 
+  validates :start_date, presence: true
+  validates :earliest_estimated_completion_date, presence: true
+  validates :latest_estimated_completion_date, presence: true
+
   scope :ordered, -> {
     # ネストされた全ての発注関連データを取得
     includes(

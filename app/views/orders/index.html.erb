@@ -81,10 +81,10 @@
                     <td class="py-2 px-4 border-b text-gray-700"><%= order&.latest_machine_assignment&.machine&.name || 'ー' %></td>
                     <td class="py-2 px-4 border-b text-gray-700"><%= order&.latest_machine_assignment&.machine_status&.name || 'ー' %></td>
                     <td class="py-2 px-4 border-b text-gray-700">
-                        <%= link_to '詳細', order_path(order), class: "inline-block px-4 py-2 text-white bg-indigo-500 rounded hover:bg-indigo-600" %>
+                        <%= link_to '詳細', order_path(order), class: "inline-block px-4 py-2 text-white bg-indigo-500 rounded hover:bg-indigo-600", id: 'show_button' %>
                     </td>
                     <td class="py-2 px-4 border-b text-gray-700">
-                        <%= link_to '編集', edit_order_path(order), class: "inline-block px-4 py-2 text-white bg-teal-500 rounded hover:bg-teal-600" %>
+                        <%= link_to '編集', edit_order_path(order), class: "inline-block px-4 py-2 text-white bg-teal-500 rounded hover:bg-teal-600", id: 'edit_button' %>
                     </td>
                 </tr>
                 <% end %>
