@@ -4,6 +4,8 @@ class ProcessEstimate < ApplicationRecord
   has_many :work_processes
 
   # after_update :recalculate_work_processes
+  validates :earliest_completion_estimate, presence: true
+  validates :latest_completion_estimate, presence: true
 
   private
 

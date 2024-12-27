@@ -8,7 +8,14 @@ class Order < ApplicationRecord
   # 未完了の作業工程を持つ注文を簡単に参照できるアソシエーション
   has_many :incomplete_work_processes, -> { where.not(work_process_status_id: 3) }, class_name: "WorkProcess"
 
-  # accepts_nested_attributes_for :machine_assignments
+  validates :company, presence: true
+  validates :product_number, presence: true
+  validates :color_number, presence: true
+  validates :roll_count, presence: true
+  validates :quantity, presence: true
+  validates :start_date, presence: true
+
+  accepts_nested_attributes_for :work_processes
 
   # すべての作業工程が完了している注文を取得
   scope :completed, -> {
@@ -21,12 +28,6 @@ class Order < ApplicationRecord
     joins(:incomplete_work_processes).distinct
   }
 
-  accepts_nested_attributes_for :work_processes
-
-  # 最新の MachineAssignment を取得するメソッド
-  def latest_machine_assignment
-    machine_assignments.order(created_at: :desc).first
-  end
   # 検索のスコープ
   # 会社名
   scope :search_by_company, ->(company_id) {
@@ -47,6 +48,11 @@ class Order < ApplicationRecord
   scope :search_by_work_process_definitions, ->(work_process_definition_id) {
     joins(:work_processes).where(work_processes: { work_process_definition_id: work_process_definition_id }) if work_process_definition_id.present?
   }
+
+  # 最新の MachineAssignment を取得するメソッド
+  def latest_machine_assignment
+    machine_assignments.order(created_at: :desc).first
+  end
 
   # 注文が1週間以内に作成されたかを判定するメソッド
   def recent?
