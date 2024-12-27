@@ -62,5 +62,16 @@ RSpec.describe '機屋画面での業務フロー', type: :system do
     visit orders_path
     click_link('show_button')
     expect(page).to have_content '現在割り当て中の織機はありません。'
+    # 12. 全てを作業完了にする
+    click_link('edit_button')
+    select '作業完了', from: 'order_work_processes_attributes_4_work_process_status_id'
+    click_button '更新'
+    expect(page).not_to have_content '作業前'
+    expect(page).not_to have_content '作業中'
+    expect(page).not_to have_content '確認中'
+    # 13. 過去の注文に入ったか確認する
+    visit past_orders_orders_path
+    expect(page).to have_content '1'
+    expect(page).to have_content 'PN-10'
   end
 end

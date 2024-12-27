@@ -193,14 +193,13 @@ class OrdersController < ApplicationController
     workprocesses_params = order_work_processes[:work_processes_attributes].values
     machine = nil
 
-    # 織機の種類変更がある場合
-    # WorkProcessのprocess_estimate_idを更新
-    # 変更があった場合の新しいナレッジ
-    machine = Machine.find_by(id: update_order_params[:machine_assignments_attributes][0][:machine_id])
-    process_estimates = ProcessEstimate.where(machine_type_id: machine.machine_type)
     # 選択されている織機typeと新しいナレッジの織機タイプが一致しているか確認
     if update_order_params[:machine_assignments_attributes]
-      machine
+      # 織機の種類変更がある場合
+      # WorkProcessのprocess_estimate_idを更新
+      # 変更があった場合の新しいナレッジ
+      machine = Machine.find_by(id: update_order_params[:machine_assignments_attributes][0][:machine_id])
+      process_estimates = ProcessEstimate.where(machine_type_id: machine.machine_type)
     end
 
     # unless machine&.machine_type == process_estimates.first.machine_type
@@ -233,10 +232,12 @@ class OrdersController < ApplicationController
       # 織機の種類を変更した場合
       # 選択されたmachine_type_id params[:machine_type_id]
 
-      if target_work_prcess.process_estimate.machine_type != process_estimates.first.machine_type
-        estimate = process_estimates.find_by(work_process_definition_id: target_work_prcess.work_process_definition_id)
-        # ナレッジ置き換え
-        target_work_prcess.process_estimate = estimate
+      if update_order_params[:machine_assignments_attributes]
+        if target_work_prcess.process_estimate.machine_type != process_estimates.first.machine_type
+          estimate = process_estimates.find_by(work_process_definition_id: target_work_prcess.work_process_definition_id)
+          # ナレッジ置き換え
+          target_work_prcess.process_estimate = estimate
+        end
       end
       target_work_prcess.work_process_status_id = workprocess_params[:work_process_status_id]
       target_work_prcess.factory_estimated_completion_date = workprocess_params[:factory_estimated_completion_date]
