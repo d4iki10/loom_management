@@ -4,7 +4,8 @@ class Admin::HomeController < ApplicationController
   before_action :set_company, only: [:show]
 
   def index
-    @orders = Order.all
+    @orders = Order.incomplete
+                   .order(:id)
     @no_orders_message = "現在、受注はありません。" unless @orders.exists?
 
     # WorkProcessにMachineAssignmentがないOrderを取得

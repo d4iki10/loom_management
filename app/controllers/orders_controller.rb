@@ -2,13 +2,13 @@ class OrdersController < ApplicationController
   include ApplicationHelper
   include FlashHelper
   before_action :require_login
-  before_action :set_order, only: [:show, :edit, :update, :destroy]
-  before_action :authorize_order, only: [:show, :destroy]
+  before_action :set_order, only: [ :show, :edit, :update, :destroy ]
+  before_action :authorize_order, only: [ :show, :destroy ]
   # 追記：parameterの型変換(accept_nested_attributes_for使用のため)
-  before_action :convert_work_processes_params, only: [:update]
+  before_action :convert_work_processes_params, only: [ :update ]
   # 【追加】更新時にmachine_assignments_attributesを事前整理するためのbefore_actionを追加
-  before_action :sanitize_machine_assignments_params, only: [:update]
-  before_action :set_machine_statuses_for_form, only: [:edit, :update]
+  before_action :sanitize_machine_assignments_params, only: [ :update ]
+  before_action :set_machine_statuses_for_form, only: [ :edit, :update ]
 
   def index
     @company = current_user&.company
@@ -59,28 +59,23 @@ class OrdersController < ApplicationController
     if params[:order][:work_processes].present?
       # 空のハッシュを用意
       work_processes_attributes = {}
-
       # work_processes 配列を work_processes_attributes ハッシュに変換
       params[:order][:work_processes].each_with_index do |work_process, index|
         work_processes_attributes[index.to_s] = work_process
       end
-
       # 変換したデータを params[:order][:work_processes_attributes] に代入
       params[:order][:work_processes_attributes] = work_processes_attributes
-
       # 元の work_processes を削除しておく
       params[:order].delete(:work_processes)
     end
   end
 
-  # 修正対象
   def update
     # ここで織機の選択条件を検証
     unless validate_machine_selection
       # 条件に合わず更新できない場合はここで処理を終了
       render :edit and return
     end
-
     ActiveRecord::Base.transaction do
       update_work_processes
       set_work_process_status_completed
@@ -134,7 +129,7 @@ class OrdersController < ApplicationController
       :roll_count,
       :quantity,
       # accepts_nested_attributes_forに対応
-      machine_assignments_attributes: [:id, :machine_id, :machine_status_id],
+      machine_assignments_attributes: [ :id, :machine_id, :machine_status_id ],
       # accepts_nested_attributes_forに対応
       work_processes_attributes: [
         :id,
@@ -145,7 +140,7 @@ class OrdersController < ApplicationController
         :earliest_estimated_completion_date,
         :latest_estimated_completion_date,
         :actual_completion_date,
-        :start_date,
+        :start_date
       ]
     )
   end
@@ -164,33 +159,12 @@ class OrdersController < ApplicationController
   end
 
   # ↓↓ updateアクションに必要なメソッド ↓↓
-  # def update_machine_assignments
-  #   params[:order][:machine_assignments].each do |ma_param|
-  #     ma = MachineAssignment.find(ma_param[:id])
-  #     ma.update!(machine_status_id: ma_param[:machine_status_id])
-  #   end
-  # end
-
-  # def update_machine_statuses
-  #   params[:order][:machine_statuses].each do |ms_param|
-  #     machine_id = ms_param[:machine_id]
-  #     new_status_id = ms_param[:machine_status_id]
-
-  #     # 関連するMachineAssignmentを取得
-  #     assignments = MachineAssignment.where(machine_id: machine_id)
-
-  #     assignments.each do |assignment|
-  #       assignment.update!(machine_status_id: new_status_id)
-  #     end
-  #   end
-  # end
-
   # WorkProcess の更新を担当
   def update_work_processes
     order_work_processes = update_order_params.except(:machine_assignments_attributes)
 
     # 完了日の取得
-    workprocesses_params = order_work_processes[:work_processes_attributes].values
+    work_processes_params = order_work_processes[:work_processes_attributes].values
     machine = nil
 
     # 選択されている織機typeと新しいナレッジの織機タイプが一致しているか確認
@@ -202,54 +176,36 @@ class OrdersController < ApplicationController
       process_estimates = ProcessEstimate.where(machine_type_id: machine.machine_type)
     end
 
-    # unless machine&.machine_type == process_estimates.first.machine_type
-    #   # type不一致です
-    #   flash[:notice] = "織機の種類が一致していないため、更新できません"
-    #   render :edit and return
-    # end
-
     current_work_processes = @order.work_processes
-
     next_start_date = nil
 
-    workprocesses_params.each_with_index do |workprocess_params, index|
-
-      target_work_prcess = current_work_processes.find(workprocess_params[:id])
+    work_processes_params.each_with_index do |work_process_params, index|
+      target_work_process = current_work_processes.find(work_process_params[:id])
       if index == 0
-        start_date = target_work_prcess["start_date"]
+        start_date = target_work_process["start_date"]
       else
-        input_start_date = workprocess_params[:start_date].to_date
-        # 入力された開始日が新しい場合は置き換え
+        input_start_date = work_process_params[:start_date].to_date
         start_date = input_start_date > next_start_date ? input_start_date : next_start_date
-        # if input_start_date < next_start_date
-        #   flash[:alert] = "開始日 (#{input_start_date}) は前の工程の完了日 (#{next_start_date}) よりも新しい日付にしてください。"
-        #   render :edit and return
-        # end
       end
 
-      actual_completion_date =  workprocess_params[:actual_completion_date]
-
-      # 織機の種類を変更した場合
-      # 選択されたmachine_type_id params[:machine_type_id]
+      actual_completion_date =  work_process_params[:actual_completion_date]
 
       if update_order_params[:machine_assignments_attributes]
-        if target_work_prcess.process_estimate.machine_type != process_estimates.first.machine_type
-          estimate = process_estimates.find_by(work_process_definition_id: target_work_prcess.work_process_definition_id)
+        if target_work_process.process_estimate.machine_type != process_estimates.first.machine_type
+          estimate = process_estimates.find_by(work_process_definition_id: target_work_process.work_process_definition_id)
           # ナレッジ置き換え
-          target_work_prcess.process_estimate = estimate
+          target_work_process.process_estimate = estimate
         end
       end
-      target_work_prcess.work_process_status_id = workprocess_params[:work_process_status_id]
-      target_work_prcess.factory_estimated_completion_date = workprocess_params[:factory_estimated_completion_date]
-      target_work_prcess.save
+      target_work_process.work_process_status_id = work_process_params[:work_process_status_id]
+      target_work_process.factory_estimated_completion_date = work_process_params[:factory_estimated_completion_date]
+      target_work_process.save
       # 更新したナレッジで全行程の日時の更新処理の呼び出し
-      new_target_work_prcess, next_start_date = WorkProcess.check_current_work_process(target_work_prcess, start_date, actual_completion_date)
+      new_target_work_process, next_start_date = WorkProcess.check_current_work_process(target_work_process, start_date, actual_completion_date)
       # 開始日の方が新しい場合は置き換え
       next_start_date = start_date > next_start_date ? start_date : next_start_date
-
-      new_target_work_prcess.actual_completion_date = actual_completion_date
-      new_target_work_prcess.save
-
+      new_target_work_process.actual_completion_date = actual_completion_date
+      new_target_work_process.save
     end
   end
 
@@ -275,7 +231,7 @@ class OrdersController < ApplicationController
     machine_id = machine_assignments_params[0][:machine_id].to_i
     machine_status_id = machine_assignments_params[0][:machine_status_id].to_i
     # フォームで送られた ID に基づき MachineAssignment を取得
-    machine_ids = @order.work_processes.joins(:machine_assignments).pluck('machine_assignments.machine_id').uniq
+    machine_ids = @order.work_processes.joins(:machine_assignments).pluck("machine_assignments.machine_id").uniq
     if machine_ids.any?
       @order.machine_assignments.each do |assignment|
         assignment.update!(
@@ -321,7 +277,7 @@ class OrdersController < ApplicationController
   end
 
   def handle_machine_assignment_updates
-    relevant_work_process_definition_ids = [1, 2, 3, 4]
+    relevant_work_process_definition_ids = [ 1, 2, 3, 4 ]
     # 対象のWorkProcess群を取得
     relevant_work_processes = @order.work_processes.where(work_process_definition_id: relevant_work_process_definition_ids)
     target_work_processes = relevant_work_processes.where(work_process_status_id: 3)
@@ -360,18 +316,15 @@ class OrdersController < ApplicationController
   # ↓↓ フラッシュメッセージを出すのに必要なメソッド ↓↓
   ## 追加: indexアクション用のWorkProcess遅延チェックメソッド
   def check_overdue_work_processes_index(orders)
-    completed_status = WorkProcessStatus.find_by(name: '作業完了')
+    completed_status = WorkProcessStatus.find_by(name: "\u4F5C\u696D\u5B8C\u4E86")
     return unless completed_status
-
     overdue_work_processes = WorkProcess.includes(:order, :work_process_definition)
                                         .where(order_id: orders.ids)
                                         .where("earliest_estimated_completion_date < ?", Date.today)
                                         .where.not(work_process_status_id: completed_status.id)
-
     if overdue_work_processes.exists?
       grouped = overdue_work_processes.group_by(&:order)
       total_overdue_orders = grouped.keys.size
-
       flash.now[:alerts] ||= []
       flash.now[:alerts] << build_flash_alert_message(
         "予定納期が過ぎている受注が #{total_overdue_orders} 件あります。",
@@ -384,12 +337,10 @@ class OrdersController < ApplicationController
 
   ## 追加: showアクション用のWorkProcess遅延チェックメソッド
   def check_overdue_work_processes_show(work_processes)
-    completed_status = WorkProcessStatus.find_by(name: '作業完了')
+    completed_status = WorkProcessStatus.find_by(name: "\u4F5C\u696D\u5B8C\u4E86")
     return unless completed_status
-
     overdue_work_processes = work_processes.where("earliest_estimated_completion_date < ?", Date.today)
-                                          .where.not(work_process_status_id: completed_status.id)
-
+                                           .where.not(work_process_status_id: completed_status.id)
     if overdue_work_processes.exists?
       flash.now[:alerts] ||= []
       flash.now[:alerts] << {
@@ -411,12 +362,11 @@ class OrdersController < ApplicationController
 
     selected_machine_id = machine_assignments_params[0][:machine_id].to_i
     selected_machine = Machine.find_by(id: selected_machine_id)
-
     # 存在しない織機の場合は特にチェックしない（別エラーになるはず）
     return true unless selected_machine
 
     order_machine_type_name = @order&.work_processes&.first&.process_estimate&.machine_type&.name
-    selected_machine_type_name = selected_machine.machine_type.name
+    selected_machine_type_name = selected_machine&.machine_type&.name
 
     # 1. 織機タイプのチェック
     if order_machine_type_name.present? && order_machine_type_name != selected_machine_type_name
@@ -427,18 +377,17 @@ class OrdersController < ApplicationController
     # 2. 既に割り当てられているかチェック
     # 他の未完了の受注に同じ織機が割り当てられていないかを確認
     # 未完了の作業工程がある受注で同じ織機を使用している場合はエラー
-    incomplete_orders_using_machine = Order
-      .incomplete
-      .joins(:machine_assignments)
-      .where(machine_assignments: { machine_id: selected_machine_id })
-      .where.not(id: @order.id) # 自分自身は除外
+    incomplete_orders_using_machine = Order.incomplete
+                                           .joins(:machine_assignments)
+                                           .where(machine_assignments: { machine_id: selected_machine_id })
+                                           .where.not(id: @order.id) # 自分自身は除外
     if incomplete_orders_using_machine.exists?
       flash.now[:alert] = "選択した織機は既に他の未完了の受注で使用されています。別の織機を選択してください。"
       return false
     end
 
     # 条件3: machine_status_idが4（使用できない状態）の場合
-    current_assignment = selected_machine.machine_assignments.order(created_at: :desc).first
+    current_assignment = selected_machine&.machine_assignments.order(created_at: :desc).first
     current_machine_status_id = current_assignment&.machine_status_id
     # binding.irb
     # current_machine_status_idが4ならエラーメッセージを表示する例

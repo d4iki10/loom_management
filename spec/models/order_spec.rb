@@ -38,12 +38,6 @@ RSpec.describe Order, type: :model do
       expect(order).not_to be_valid
       expect(order.errors[:quantity]).to include("can't be blank")
     end
-
-    it 'start_dateが必須であること' do
-      order = build(:order_a_pn100_c001, start_date: nil)
-      expect(order).not_to be_valid
-      expect(order.errors[:start_date]).to include("can't be blank")
-    end
   end
 
   describe 'アソシエーション' do

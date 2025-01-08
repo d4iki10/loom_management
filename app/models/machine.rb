@@ -45,7 +45,6 @@ class Machine < ApplicationRecord
       .distinct
   }
 
-
   # 特定のIDを持つ機械を取得するクラスメソッド
   def self.find_with_associations(id)
     machine_associations.find_by(id: id)
