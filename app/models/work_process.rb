@@ -2,12 +2,12 @@ class WorkProcess < ApplicationRecord
   belongs_to :order
   belongs_to :work_process_definition
   belongs_to :work_process_status
+  belongs_to :process_estimate, optional: true
   has_many :machine_assignments
-  accepts_nested_attributes_for :machine_assignments
-  belongs_to :process_estimate, optional: true # null allow
-  accepts_nested_attributes_for :process_estimate
-  # WorkControllerでの関連情報取得簡略化のため、throughを追加
   has_many :machines, through: :machine_assignments
+
+  accepts_nested_attributes_for :machine_assignments
+  accepts_nested_attributes_for :process_estimate
 
   validates :start_date, presence: true
   validates :earliest_estimated_completion_date, presence: true
@@ -21,7 +21,8 @@ class WorkProcess < ApplicationRecord
       order: [:company, :product_number, :color_number]
     )
     .joins(:work_process_definition)
-    .order('work_process_definitions.sequence') }
+    .order('work_process_definitions.sequence')
+  }
 
   # 発注登録時に一括作成するWorkProcess配列を定義
   def self.initial_processes_list(start_date)
@@ -74,7 +75,7 @@ class WorkProcess < ApplicationRecord
     ]
   end
 
- # 織機の種類登録、変更でwork_processのprocess_estimate_idを更新
+  # 織機の種類登録、変更でwork_processのprocess_estimate_idを更新
   def self.decide_machine_type(workprocesses, machine_type_id)
     if machine_type_id == 1
       # 初期のWorkProcess配列のprocess_estimate_idを更新
@@ -119,15 +120,12 @@ class WorkProcess < ApplicationRecord
         next_start_date = process[:earliest_estimated_completion_date]
       end
       update = false
-      #
-
     end
     estimate_workprocesses
   end
 
   # 更新：全行程の日時の更新
   def self.check_current_work_process(process, start_date, actual_completion_date)
-
     # 工程idが2以上の場合
     if process[:work_process_definition_id].to_i >= 2
       if actual_completion_date.present?
@@ -137,8 +135,7 @@ class WorkProcess < ApplicationRecord
         # 追記
         process[:start_date] = start_date
       else
-      # 開始日の更新が必要
-
+        # 開始日の更新が必要
         process[:start_date] = start_date
         # 更新された開始日からナレッジを再計算
         self.calc_process_estimate(process, start_date)
@@ -153,7 +150,6 @@ class WorkProcess < ApplicationRecord
         process = self.calc_process_estimate(process, start_date)
       end
     end
-
 
     # 整理加工の開始日調整
     if process[:work_process_definition_id].to_i == 4
@@ -171,18 +167,17 @@ class WorkProcess < ApplicationRecord
     return [process, next_start_date]
   end
 
-
   # ナレッジ更新処理
   def self.calc_process_estimate(process, start_date)
-      # 納期の見込み日数のレコードを取得
-      work_process_id = process["id"]
-      target_estimate_record = ProcessEstimate.joins(:work_processes)
-      .find_by(work_processes: { id: work_process_id })
+    # 納期の見込み日数のレコードを取得
+    work_process_id = process["id"]
+    target_estimate_record = ProcessEstimate.joins(:work_processes)
+    .find_by(work_processes: { id: work_process_id })
 
-      # ナレッジの値を計算して更新
-      process[:earliest_estimated_completion_date] = start_date.to_date + target_estimate_record.earliest_completion_estimate
-      process[:latest_estimated_completion_date] = start_date.to_date + target_estimate_record.latest_completion_estimate
-      process
+    # ナレッジの値を計算して更新
+    process[:earliest_estimated_completion_date] = start_date.to_date + target_estimate_record.earliest_completion_estimate
+    process[:latest_estimated_completion_date] = start_date.to_date + target_estimate_record.latest_completion_estimate
+    process
   end
 
 
@@ -202,5 +197,4 @@ class WorkProcess < ApplicationRecord
       order(:start_date).first
     end
   end
-
 end

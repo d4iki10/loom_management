@@ -12,12 +12,11 @@ class MachinesController < ApplicationController
     @work_processes = WorkProcess.ordered
     check_machine_status_index(@machines)
 
-      # 検索の実行（スコープを適用）
-      @machines = @machines
-      .search_by_company(params[:company_id])
-      .search_by_machine(params[:machine_id])
-      .search_by_product_number(params[:product_number_id])
-      .search_by_work_process_definitions(params[:work_process_definition_id])
+    # 検索の実行（スコープを適用）
+    @machines = @machines.search_by_company(params[:company_id])
+                         .search_by_machine(params[:machine_id])
+                         .search_by_product_number(params[:product_number_id])
+                         .search_by_work_process_definitions(params[:work_process_definition_id])
   end
 
   def search_params
@@ -116,7 +115,7 @@ class MachinesController < ApplicationController
     target_work_process_def = WorkProcessDefinition.find_by(id: 4)
     return unless target_work_process_def
 
-    relevant_work_processes = WorkProcess.where(work_process_definition_id: target_work_process_def.id)
+    # relevant_work_processes = WorkProcess.where(work_process_definition_id: target_work_process_def.id)
     problematic_machine_assignments = MachineAssignment.joins(:work_process)
                                                        .where(work_processes: { work_process_definition_id: 4 })
                                                        .where.not(machine_status_id: 3) # "稼働中" でない
@@ -141,7 +140,7 @@ class MachinesController < ApplicationController
     target_work_process_def = WorkProcessDefinition.find_by(id: 4)
     return unless target_work_process_def
 
-    relevant_work_processes = WorkProcess.where(work_process_definition_id: target_work_process_def.id, order: machine.company.orders)
+    # relevant_work_processes = WorkProcess.where(work_process_definition_id: target_work_process_def.id, order: machine.company.orders)
     problematic_machine_assignments = machine.machine_assignments.joins(:work_process)
                                                                  .where(work_processes: { work_process_definition_id: 4 })
                                                                  .where.not(machine_status_id: 3) # "稼働中" でない
