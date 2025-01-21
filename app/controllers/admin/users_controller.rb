@@ -53,7 +53,9 @@ class Admin::UsersController < ApplicationController
 
     if @user.save
       # フラッシュメッセージにメールアドレスとパスワードを設定
-      flash[:notice] = "ユーザーの登録に成功しました。"
+      flash[:notice] = "ユーザーの登録に成功しました。以下がログイン情報です。（ログイン情報は一度しか表示されません。）"
+      flash[:email] = @user.email
+      flash[:password] = generated_password
       redirect_to admin_user_path(@user)
     else
       # Rails.logger.debug "ユーザー情報の取得に失敗しました: #{@user.errors.full_messages.join(', ')}"
