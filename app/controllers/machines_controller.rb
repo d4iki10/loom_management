@@ -115,9 +115,9 @@ class MachinesController < ApplicationController
     target_work_process_def = WorkProcessDefinition.find_by(id: 4)
     return unless target_work_process_def
 
-    # relevant_work_processes = WorkProcess.where(work_process_definition_id: target_work_process_def.id)
     problematic_machine_assignments = MachineAssignment.joins(:work_process)
                                                        .where(work_processes: { work_process_definition_id: 4 })
+                                                       .where("work_processes.earliest_estimated_completion_date < ?", Date.today)
                                                        .where.not(machine_status_id: 3) # "稼働中" でない
 
     problematic_machine_assignments = problematic_machine_assignments.where(machine: machines)
@@ -140,9 +140,9 @@ class MachinesController < ApplicationController
     target_work_process_def = WorkProcessDefinition.find_by(id: 4)
     return unless target_work_process_def
 
-    # relevant_work_processes = WorkProcess.where(work_process_definition_id: target_work_process_def.id, order: machine.company.orders)
     problematic_machine_assignments = machine.machine_assignments.joins(:work_process)
                                                                  .where(work_processes: { work_process_definition_id: 4 })
+                                                                 .where("work_processes.earliest_estimated_completion_date < ?", Date.today)
                                                                  .where.not(machine_status_id: 3) # "稼働中" でない
 
     if problematic_machine_assignments.exists?
