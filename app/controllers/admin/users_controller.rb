@@ -53,14 +53,12 @@ class Admin::UsersController < ApplicationController
 
     if @user.save
       # フラッシュメッセージにメールアドレスとパスワードを設定
-      flash[:notice] = "\u30E6\u30FC\u30B6\u30FC\u3092\u767B\u9332\u3057\u307E\u3057\u305F\u3002\u4EE5\u4E0B\u304C\u30ED\u30B0\u30A4\u30F3\u60C5\u5831\u3067\u3059\u3002"
-      flash[:email] = @user.email
-      flash[:password] = generated_password
+      flash[:notice] = "ユーザーの登録に成功しました。"
       redirect_to admin_user_path(@user)
     else
       # Rails.logger.debug "ユーザー情報の取得に失敗しました: #{@user.errors.full_messages.join(', ')}"
       @companies = Company.all
-      flash.now[:alert] = "\u767B\u9332\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002"
+      flash.now[:alert] = "ユーザーの登録に失敗しました。"
       render "new"
     end
   end
@@ -70,22 +68,29 @@ class Admin::UsersController < ApplicationController
 
   def update
     if @user.update(user_params.except(:new_company_name))
-      redirect_to admin_user_path(@user), notice: "\u30E6\u30FC\u30B6\u30FC\u60C5\u5831\u304C\u66F4\u65B0\u3055\u308C\u307E\u3057\u305F\u3002"
+      redirect_to admin_user_path(@user), notice: "ユーザー情報が更新されました。"
     else
-      flash.now[:alert] = "\u30E6\u30FC\u30B6\u30FC\u60C5\u5831\u304C\u66F4\u65B0\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002"
+      flash.now[:alert] = "ユーザー情報が更新できませんでした。"
       render :edit
     end
   end
 
   def destroy
     if @user.admin? && User.where(admin: true).count <= 1
-      flash[:alert] = "\u7BA1\u7406\u8005\u304C\u6B8B\u308A1\u540D\u306E\u305F\u3081\u524A\u9664\u304C\u3067\u304D\u307E\u305B\u3093\u3002"
+      flash[:alert] = "管理者が残り1名のため削除ができません。"
       redirect_to admin_users_path
     else
       if @user.destroy
-        flash[:notice] = "\u30E6\u30FC\u30B6\u30FC\u3092\u524A\u9664\u3059\u308B\u3053\u3068\u304C\u3067\u304D\u307E\u3057\u305F\u3002"
+        flash[:notice] = "ユーザーを削除することができました。"
+        company = @user.company
+        if company.users.empty?
+          company.destroy
+          flash[:notice] = "ユーザーおよび所属する会社を削除しました。"
+        else
+          flash[:notice] = "ユーザーを削除しました。"
+        end
       else
-        flash[:alert] = "\u30E6\u30FC\u30B6\u30FC\u306E\u524A\u9664\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002"
+        flash[:alert] = "ユーザーの削除に失敗しました。"
       end
       redirect_to admin_users_path
     end

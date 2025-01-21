@@ -86,7 +86,7 @@ class HomeController < ApplicationController
     orders_without_assignment = orders.left_outer_joins(:machine_assignments)
                                       .where(machine_assignments: { machine_id: nil })
                                       .distinct
-    all_work_process_definition_ids = [1, 2, 3, 4, 5]
+    all_work_process_definition_ids = [1, 2, 3, 4]
     orders_with_work_process = orders.joins(:work_processes)
                                      .where(work_processes: { work_process_definition_id: all_work_process_definition_ids })
                                      .where.not(work_processes: { work_process_status_id: 3 })
